@@ -1,32 +1,33 @@
-module Examples.ServerDouble ( 
+module Examples.ServerDouble (
 -- * In which we define a server that the doubles the characters in incoming strings
 -- $example
 -- * Program
 -- $program
 -- ** Conduit version
 -- $conduit
-   main 
+   main
    ) where
 
-import Pipes.Network.TCP
-import qualified Data.ByteString as B
-import qualified Pipes.ByteString as Bytes
-import Pipes
+import qualified Data.ByteString   as B
+import           Pipes
+import qualified Pipes.ByteString  as Bytes
+import           Pipes.Network.TCP (HostPreference (Host), fromSocket, serve,
+                                    toSocket)
 
 main :: IO ()
 main = do putStrLn "Double server available on 4001"
-          serve (Host "127.0.0.1") "4001" $ \(connectionSocket, remoteAddr) -> 
+          serve (Host "127.0.0.1") "4001" $ \(connectionSocket, remoteAddr) ->
             runEffect $ fromSocket connectionSocket 4096
                         >-> Bytes.concatMap (\x -> B.pack [x,x])
                         >-> toSocket connectionSocket
-                        
+
 {- $example
 
 This program sets up a service on 4001. We can start it thus:
-                       
+
 > terminal1$ pipes-network-tcp-examples ServerDouble
 > Double server available on 4001
-                        
+
 and send it stuff with telnet:
 
 > terminal2$ telnet localhost 4001
@@ -40,24 +41,24 @@ Our dedicated client in @Examples.ClientPipeline@ will link this server to the u
 
 -}
 
-{- $program 
+{- $program
 > import Pipes.Network.TCP
 > import qualified Data.ByteString as B
 > import qualified Pipes.ByteString as Bytes
-> import Pipes                        
-                        
+> import Pipes
+
 > main :: IO ()
 > main = do putStrLn "Double server available on 4001"
->           serve (Host "127.0.0.1") "4001" $ \(connectionSocket, remoteAddr) -> 
+>           serve (Host "127.0.0.1") "4001" $ \(connectionSocket, remoteAddr) ->
 >             runEffect $ fromSocket connectionSocket 4096
 >                         >-> Bytes.concatMap (\x -> B.pack [x,x])
 >                         >-> toSocket connectionSocket
 
 -}
-                        
+
 {- $conduit
-                        
-And, in the conduit version:                     
+
+And, in the conduit version:
 
 > import           Conduit
 > import           Data.ByteString      (pack)
@@ -67,5 +68,5 @@ And, in the conduit version:
 >         $$ concatMapCE (\w -> pack [w, w])
 >         =$ appSink appData
 >         =$ appSink appData
-                        
+
 -}

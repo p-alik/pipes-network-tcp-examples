@@ -8,22 +8,22 @@ module Examples.ClientToUpper (
    main
    ) where
 
-import Pipes
-import qualified Pipes.ByteString as PB
-import Pipes.Network.TCP
+import           Pipes
+import qualified Pipes.ByteString         as PB
+import           Pipes.Network.TCP        (connect, fromSocket, toSocket)
 
-import Control.Concurrent.Async (concurrently)
+import           Control.Concurrent.Async (concurrently)
 
 main = connect "127.0.0.1" "4000" $ \(connectionSocket,_) -> do
   let act1 = runEffect $ PB.stdin >-> toSocket connectionSocket
       act2 = runEffect $ fromSocket connectionSocket 4096 >-> PB.stdout
-  concurrently act1 act2 
+  concurrently act1 act2
   return ()
 
 {- $example
 
-If we have our uppercasing service from @Examples.ServerToUpper@ running on 4000 
-  
+If we have our uppercasing service from @Examples.ServerToUpper@ running on 4000
+
 > terminal1$ pipes-network-tcp-examples ServerToUpper
 > Opening upper-casing service on 4000
 
@@ -32,8 +32,8 @@ then we can telnet to it, of course, but here we have a dedicated client for tal
 > terminal2$ pipes-network-tcp-examples ClientToUpper
 > el pueblo unido jamas sera vencido!
 > EL PUEBLO UNIDO JAMAS SERA VENCIDO!
-  
-  
+
+
 -}
 
 {- $program
@@ -41,11 +41,11 @@ then we can telnet to it, of course, but here we have a dedicated client for tal
 > import qualified Pipes.ByteString as PB
 > import Pipes.Network.TCP
 > import Control.Concurrent.Async (concurrently)
-> 
+>
 > main = connect "127.0.0.1" "4000" $ \(connectionSocket,_) -> do
 >   let act1 = runEffect $ PB.stdin >-> toSocket connectionSocket
 >       act2 = runEffect $ fromSocket connectionSocket 4096 >-> PB.stdout
->   concurrently act1 act2 
+>   concurrently act1 act2
 >   return ()
 -}
 
@@ -59,5 +59,5 @@ then we can telnet to it, of course, but here we have a dedicated client for tal
 >         void $ concurrently
 >             (stdinC $$ appSink server)
 >             (appSource server $$ stdoutC)
-  
+
 -}

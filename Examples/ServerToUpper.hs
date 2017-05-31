@@ -5,29 +5,30 @@ module Examples.ServerToUpper (
 -- $program
 -- ** Conduit version
 -- $conduit
-   main 
+   main
    ) where
 
-import Pipes
-import Pipes.Network.TCP
-import qualified Pipes.ByteString as Bytes
+import           Pipes
+import qualified Pipes.ByteString  as Bytes
+import           Pipes.Network.TCP (HostPreference (Host), fromSocket, serve,
+                                    toSocket)
 
-import Data.Word8 (toUpper)
+import           Data.Word8        (toUpper)
 
 main :: IO ()
 main = do putStrLn "Opening upper-casing service on 4000"
-          serve (Host "127.0.0.1") "4000" $ \(client,_) -> 
+          serve (Host "127.0.0.1") "4000" $ \(client,_) ->
            runEffect $ fromSocket client 4096
                        >-> Bytes.map toUpper
-                       >-> toSocket client   
+                       >-> toSocket client
 
 
-{- $example 
+{- $example
 This program sets up a service on 4000. We can start it thus:
-                       
+
 > terminal1$ pipes-network-tcp-examples ServerToUpper
 > Opening upper-casing service on 4000
-                       
+
 and send it stuff with telnet:
 
 > terminal2$ telnet localhost 4000
@@ -43,23 +44,23 @@ Or we can contact it with dedicated Haskell client like @Examples.ClientToUpper@
 > hello
 > HELLO
 
-                       
+
 -}
-                       
+
 {- $program
-                       
+
 > import Pipes
 > import Pipes.Network.TCP
 > import qualified Pipes.ByteString as Bytes
-> 
+>
 > import Data.Word8 (toUpper)
-> 
+>
 > main :: IO ()
 > main = do putStrLn "Opening upper-casing service on 4000"
->           serve (Host "127.0.0.1") "4000" $ \(client,_) -> 
+>           serve (Host "127.0.0.1") "4000" $ \(client,_) ->
 >            runEffect $ fromSocket client 4096
 >                        >-> Bytes.map toUpper
->                        >-> toSocket client   
+>                        >-> toSocket client
 
 -}
 
@@ -70,9 +71,9 @@ And in the conduit version:
 > import           Conduit
 > import           Data.Conduit.Network
 > import           Data.Word8           (toUpper)
-> 
+>
 > main :: IO ()
 > main = runTCPServer (serverSettings 4000 "*") $ \appData ->
 >     appSource appData $$ omapCE toUpper =$ appSink appData
-   
+
 -}

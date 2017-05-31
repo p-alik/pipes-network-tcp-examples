@@ -1,23 +1,24 @@
-{-#LANGUAGE OverloadedStrings#-}
-{-#LANGUAGE RankNTypes#-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
 module Examples.ProxyAuth (main) where
 
-import Pipes
-import Pipes.Parse
-import qualified Pipes.ByteString as PB
-import Pipes.Network.TCP
-import qualified Data.ByteString as B
-import Data.ByteString (ByteString) 
-import Data.Word8 (_cr)
+import           Data.ByteString          (ByteString)
+import qualified Data.ByteString          as B
+import           Data.Word8               (_cr)
+import           Pipes
+import qualified Pipes.ByteString         as PB
+import           Pipes.Network.TCP        (HostPreference (Host), connect,
+                                           fromSocket, serve, toSocket)
+import           Pipes.Parse
 
-import Control.Concurrent.Async
-import Lens.Simple
+import           Control.Concurrent.Async
+import           Lens.Simple
 
 creds :: [(ByteString, ByteString)]
 creds = [ ("spaceballs", "12345") ]
 
-checkAuth :: MonadIO m 
-          => Producer ByteString m r 
+checkAuth :: MonadIO m
+          => Producer ByteString m r
           -> Producer ByteString m (Producer ByteString m r)
 checkAuth p = do
     yield "Username: "
@@ -28,14 +29,14 @@ checkAuth p = do
        then yield "Successfully authenticated.\n"
        else do yield "Invalid username/password.\n"
                error "Invalid authentication, please log somewhere..."
-    return p2 -- when using `error` 
+    return p2 -- when using `error`
 
 main :: IO ()
-main = serve (Host "127.0.0.1") "4003" process 
+main = serve (Host "127.0.0.1") "4003" process
 
   where
   process (client, _) =
-   do let authorization = checkAuth (fromSocket client 4096) >-> toSocket client 
+   do let authorization = checkAuth (fromSocket client 4096) >-> toSocket client
       from_client <- runEffect authorization
       connect  "127.0.0.1" "4000"  $ \(server,_) ->
         do let pipe_forward = from_client            >-> toSocket server
@@ -44,10 +45,10 @@ main = serve (Host "127.0.0.1") "4003" process
            return ()
 
 
-  
+
 shortLineInput :: Monad m => Int -> Parser ByteString m ByteString
-shortLineInput n = do 
-    bss <- zoom (line' . PB.splitAt n) drawAll 
+shortLineInput n = do
+    bss <- zoom (line' . PB.splitAt n) drawAll
     return $ B.filter (/= _cr) (B.concat bss)
   where
   -- Bytes.line doesn't drop the following newline
@@ -60,7 +61,7 @@ shortLineInput n = do
 -- creds =
 --     [ ("spaceballs", "12345")
 --     ]
--- 
+--
 -- checkAuth :: Conduit ByteString IO ByteString
 -- checkAuth = do
 --     yield "Username: "
@@ -73,7 +74,7 @@ shortLineInput n = do
 --         else do
 --             yield "Invalid username/password.\n"
 --             error "Invalid authentication, please log somewhere..."
--- 
+--
 -- main :: IO ()
 -- main =
 --     runTCPServer (serverSettings 4003 "*") $ \client -> do

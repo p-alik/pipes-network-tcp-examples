@@ -1,13 +1,14 @@
 module Examples.ProxyToUpper (main) where
 
-import Pipes
-import Pipes.Network.TCP
-import Control.Concurrent.Async 
-import Control.Monad
+import           Control.Concurrent.Async
+import           Control.Monad
+import           Pipes
+import           Pipes.Network.TCP        (HostPreference (Host), connect,
+                                           fromSocket, serve, toSocket)
 
 main :: IO ()
 main = serve (Host "127.0.0.1") "4002" $ \(client, _) ->
-  connect "127.0.0.1" "4000"    $ \(server, _) -> 
+  connect "127.0.0.1" "4000"    $ \(server, _) ->
     do let act1 =  runEffect $ fromSocket client 4096 >-> toSocket server
            act2 =  runEffect $ fromSocket server 4096 >-> toSocket client
        concurrently act1 act2

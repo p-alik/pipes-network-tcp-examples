@@ -1,16 +1,16 @@
-{-#LANGUAGE OverloadedStrings#-}
-{-#LANGUAGE RankNTypes#-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes        #-}
 module Proxy2 (main) where
-import Pipes
-import Pipes.Parse
-import qualified Pipes.ByteString as PB
-import Pipes.Network.TCP
-import Control.Concurrent.Async
-import qualified Data.ByteString as B
-import Data.ByteString (ByteString) 
-import Data.Word8 (_cr)
-import Control.Monad
-import Lens.Simple
+import           Control.Concurrent.Async
+import           Control.Monad
+import           Data.ByteString          (ByteString)
+import qualified Data.ByteString          as B
+import           Data.Word8               (_cr)
+import           Lens.Simple
+import           Pipes
+import qualified Pipes.ByteString         as PB
+import           Pipes.Network.TCP        (connect, fromSocket, toSocket)
+import           Pipes.Parse
 
 
 creds :: [(ByteString, ByteString)]
@@ -18,11 +18,11 @@ creds = [ ("spaceballs", "12345") ]
 
 
 shortLineInput :: Monad m => Int -> Parser ByteString m ByteString
-shortLineInput n = do bss <- zoom (line' . PB.splitAt n) drawAll 
+shortLineInput n = do bss <- zoom (line' . PB.splitAt n) drawAll
                       return $ B.filter (/= _cr) (B.concat bss)
 
-checkAuth :: MonadIO m 
-          => Producer ByteString m r 
+checkAuth :: MonadIO m
+          => Producer ByteString m r
           -> Producer ByteString m (Producer ByteString m r)
 checkAuth p = do
     yield "Username: "
@@ -33,11 +33,11 @@ checkAuth p = do
        then yield "Successfully authenticated.\n"
        else do yield "Invalid username/password.\n"
                error "Invalid authentication, please log somewhere..."
-    return p2 -- when using `error` 
+    return p2 -- when using `error`
 
 
-main = serve (Host "127.0.0.1") "4003" $ \(client, _) -> 
-   do let authorization = checkAuth (fromSocket client 4096) >-> toSocket client 
+main = serve (Host "127.0.0.1") "4003" $ \(client, _) ->
+   do let authorization = checkAuth (fromSocket client 4096) >-> toSocket client
       from_client <- runEffect authorization
       connect  "127.0.0.1" "4000"  $ \(server,_) ->
         do let pipe_forward = runEffect $ from_client >-> toSocket server
@@ -45,8 +45,8 @@ main = serve (Host "127.0.0.1") "4003" $ \(client, _) ->
            concurrently pipe_forward pipe_back
            return ()
 
-                      
-line' :: Monad m => Lens' (Producer ByteString m r) 
+
+line' :: Monad m => Lens' (Producer ByteString m r)
                           (Producer ByteString m (Producer ByteString m r))
 line' = iso to join where
   to p = do p' <- p ^. PB.line
@@ -58,7 +58,7 @@ line' = iso to join where
 -- creds =
 --     [ ("spaceballs", "12345")
 --     ]
--- 
+--
 -- checkAuth :: Conduit ByteString IO ByteString
 -- checkAuth = do
 --     yield "Username: "
@@ -71,7 +71,7 @@ line' = iso to join where
 --         else do
 --             yield "Invalid username/password.\n"
 --             error "Invalid authentication, please log somewhere..."
--- 
+--
 -- main :: IO ()
 -- main =
 --     runTCPServer (serverSettings 4003 "*") $ \client -> do
